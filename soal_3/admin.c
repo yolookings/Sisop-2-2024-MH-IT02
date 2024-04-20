@@ -1,19 +1,29 @@
 #include <stdio.h>
-#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 int main(int argc, char *argv[]) {
-    // Periksa jumlah argumen
     if (argc != 2) {
-        printf("Penggunaan: %s <user>\n", argv[0]);
-        return 1; // Keluar dengan kode kesalahan
+        fprintf(stderr, "Usage: %s <user>\n", argv[0]);
+        return 1;
     }
 
-    // Ambil nama pengguna dari argumen
-    char *username = argv[1];
+    char command[256];
+    sprintf(command, "ps -u %s", argv[1]);
+    FILE *fp = popen(command, "r");
+    if (fp == NULL) {
+        fprintf(stderr, "Failed to run command\n");
+        return 1;
+    }
 
-    // Implementasikan pemantauan kegiatan pengguna di sini
+    char line[256];
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        printf("%s", line);
+    }
 
-    printf("Memantau kegiatan pengguna '%s'...\n", username);
+    pclose(fp);
 
     return 0;
 }
