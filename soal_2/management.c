@@ -60,7 +60,6 @@ void process_directory_files()
 {
     DIR *dir;
     struct dirent *entry;
-
     dir = opendir("library/");
     if (dir == NULL) 
     {
@@ -102,7 +101,6 @@ void process_directory_files()
             }
         }
     }
-
     closedir(dir);
 }
 
@@ -111,7 +109,6 @@ void perform_backup()
 {
     DIR *dir;
     struct dirent *entry;
-
     dir = opendir("library/"); 
     if (dir == NULL) 
     {
@@ -169,7 +166,6 @@ void restore_backup_files()
             log_file_action("paul", file, "Berhasil dipulihkan dari backup.");
         }
     }
-
     closedir(dir);
 }
 
@@ -189,7 +185,6 @@ void handle_signals(int signum)
         mode = "restore";
         restore_backup_files(); 
     }
-
     log_file_action("daemon", "daemon", mode);
 }
 
@@ -259,6 +254,5 @@ int main()
     {
         sleep(1);
     }
-
     return 0;
 }
