@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <dirent.h>
+#include <unistd.h>
 #include <curl/curl.h>
 #include <time.h>
-#include <dirent.h>
 #include <signal.h>
-#include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
@@ -45,15 +45,12 @@ void log_file_action(char *username, char *file, char *action)
         perror("Error membuka file log");
         exit(EXIT_FAILURE);
     }
-
     time_t rawtime;
     struct tm *timeinfo;
     char timestamp[20];
-
     time(&rawtime);
     timeinfo = localtime(&rawtime);
     strftime(timestamp, sizeof(timestamp), "%H:%M:%S", timeinfo);
-
     fprintf(logFile, "[%s][%s] - %s - %s\n", username, timestamp, file, action);
     fclose(logFile);
 }
@@ -128,7 +125,6 @@ void perform_backup()
         { 
             char *file = entry->d_name;
             char deskripsi_file[256];
-
             strcpy(deskripsi_file, file);
             decrypt_string(deskripsi_file);
 
@@ -150,7 +146,6 @@ void restore_backup_files()
 {
     DIR *dir;
     struct dirent *entry;
-
     dir = opendir("library/backup/");
     if (dir == NULL) 
     {
@@ -164,10 +159,8 @@ void restore_backup_files()
         { 
             char *file = entry->d_name;
             char deskripsi_file[256];
-
             strcpy(deskripsi_file, file);
             decrypt_string(deskripsi_file);
-
             char restored_path[256];
             sprintf(restored_path, "%s", file);
             char backup[256];
