@@ -182,11 +182,11 @@ int main(int argc, char *argv[]) {
     char *option = argv[1];
 
      if (argc == 2) {
-        // Buat string untuk opsi `-u` dan nama pengguna
+        // opsi -u
         char user_option[20];
         sprintf(user_option, "-u%s", argv[1]);
         
-        // Menjalankan perintah `ps -u <option>`
+        // Menjalankan perintah `ps -u <option>` kata lain ./admin <user>
         if (execlp("ps", "ps", user_option, NULL) == -1) {
             perror("execlp failed");
             return 1;
