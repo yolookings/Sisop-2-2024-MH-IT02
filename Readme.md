@@ -77,7 +77,7 @@ Options:
 - -c <user>: Terus gagalkan proses untuk pengguna tertentu secara berkelanjutan.
 - -a <user>: Memperbolehkan proses untuk pengguna tertentu.
 
-## membuat log dan memonitor log
+## fungsi menulis ke file log dan memonitornya
 
 ```c
 void monitorProcesses(const char *user) {
@@ -141,27 +141,192 @@ Proses anak kemudian menjadi pemimpin sesi baru dengan `setsid()`, yang memisahk
 
 Selain itu, fungsi ini menutup file descriptor yang terhubung ke terminal dan mengalihkan stdin, stdout, dan stderr ke `/dev/null` untuk membuang input/output, sehingga menjadikan program berjalan sebagai background process yang independen.
 
-## menjalankan program
+## Fail Process
 
-![alt text](images/image.png)
+```c
+void fail_processes(char *user) {
+    DIR *dir;
+    struct dirent *entry;
+    char path[256];
 
-sebelum melakukan pemanggilan fungsi maka harus dilakukan compile
-kemudian setelah itu baru kita dapat melakukan ./admin mwlanaz , dengan mwlanaz merupakan nama dari user yang ingin kita jalani.
+    dir = opendir("/proc");
+    if (!dir) {
+        perror("opendir failed");
+        return;
+    }
 
-`(fungsi menulis ke file log)`
+    while ((entry = readdir(dir)) != NULL) {
+        if (entry->d_type == DT_DIR) {
+            sprintf(path, "/proc/%s/status", entry->d_name);
+            FILE *status = fopen(path, "r");
+            if (status) {
+                char line[256];
+                char username[256];
+                int uid;
+                while (fgets(line, sizeof(line), status)) {
+                    if (strncmp(line, "Uid:", 4) == 0) {
+                        sscanf(line, "Uid: %d", &uid);
+                        struct passwd *pwd = getpwuid(uid);
+                        if (pwd != NULL) {
+                            strcpy(username, pwd->pw_name);
+                            if (strcmp(username, user) == 0) {
+                                // Mengirim sinyal SIGKILL ke proses
+                                kill(atoi(entry->d_name), SIGKILL);
+                            }
+                        }
+                    }
+                }
+                fclose(status);
+            }
+        }
+    }
+    closedir(dir);
+}
+```
 
-`(fail proccess)`
+- Fungsi fail_processes digunakan untuk menggagalkan (fail) proses yang dimiliki oleh pengguna tertentu.
+- fungsi membuka direktori /proc yang berisi informasi tentang proses yang sedang berjalan di sistem.
+- Setiap entri dalam direktori tersebut mewakili satu proses.
+- Selama masih ada entri dalam direktori /proc, fungsi membaca setiap entri dan membuka file /proc/[pid]/status untuk mendapatkan informasi tentang pengguna yang menjalankan proses tersebut.
+- Jika informasi pengguna ditemukan, fungsi menggunakan getpwuid untuk mendapatkan nama pengguna dari ID pengguna (UID).
+- Jika nama pengguna proses sesuai dengan pengguna yang diberikan sebagai argumen, fungsi mengirimkan sinyal SIGKILL ke proses tersebut menggunakan kill(atoi(entry->d_name), SIGKILL).
+- Sinyal SIGKILL digunakan untuk menghentikan secara paksa proses yang dianggap tidak dapat dipulihkan.
+- Setelah selesai membaca semua entri dalam direktori /proc, direktori tersebut ditutup.
+- Dengan cara ini, fungsi fail_processes memungkinkan proses-proses yang dimiliki oleh pengguna yang ditentukan untuk gagal secara paksa.
 
-`(allow proccess)`
+## Allow Process
 
-`(fungsi main)`
+```c
+void allow_processes(char *user) {
+    DIR *dir;
+    struct dirent *entry;
+    char path[256];
 
-## beberapa error saat menjalankan program
+    dir = opendir("/proc");
+    if (!dir) {
+        perror("opendir failed");
+        return;
+    }
+
+    while ((entry = readdir(dir)) != NULL) {
+        if (entry->d_type == DT_DIR) {
+            sprintf(path, "/proc/%s/status", entry->d_name);
+            FILE *status = fopen(path, "r");
+            if (status) {
+                char line[256];
+                char username[256];
+                int uid;
+                while (fgets(line, sizeof(line), status)) {
+                    if (strncmp(line, "Uid:", 4) == 0) {
+                        sscanf(line, "Uid: %d", &uid);
+                        struct passwd *pwd = getpwuid(uid);
+                        if (pwd != NULL) {
+                            strcpy(username, pwd->pw_name);
+                            if (strcmp(username, user) == 0) {
+                                // Mengirim sinyal SIGCONT untuk melanjutkan proses
+                                kill(atoi(entry->d_name), SIGCONT);
+                            }
+                        }
+                    }
+                }
+                fclose(status);
+            }
+        }
+    }
+    closedir(dir);
+}
+```
+
+Fungsi `allow_processes` membuka direktori `/proc`, yang berisi informasi tentang proses yang sedang berjalan di sistem. Setiap entri dalam direktori tersebut mewakili satu proses. Selama masih ada entri dalam direktori /proc, fungsi membaca setiap entri dan membuka file `/proc/[pid]/status` untuk mendapatkan informasi tentang pengguna yang menjalankan proses tersebut.
+
+Jika informasi pengguna ditemukan, fungsi menggunakan getpwuid untuk mendapatkan nama pengguna dari ID pengguna `(UID)`. Jika nama pengguna proses sesuai dengan pengguna yang diberikan sebagai argumen, fungsi mengirimkan sinyal `SIGCONT` ke proses tersebut menggunakan kill(atoi(entry->d_name), SIGCONT). Sinyal SIGCONT digunakan untuk melanjutkan proses yang mungkin telah dihentikan sebelumnya.
+
+Setelah selesai membaca semua entri dalam direktori /proc, direktori tersebut ditutup. Dengan cara ini, fungsi allow_processes memungkinkan proses-proses yang dimiliki oleh pengguna yang ditentukan untuk dilanjutkan kembali setelah mungkin dihentikan sebelumnya.
+
+## Fungsi Main
+
+```c
+// Fungsi utama
+int main(int argc, char *argv[]) {
+    if (argc < 2) {
+        show_help();
+        return 1;
+    }
+
+    char *option = argv[1];
+
+     if (argc == 2) {
+        // opsi -u
+        char user_option[20];
+        sprintf(user_option, "-u%s", argv[1]);
+
+        // Menjalankan perintah `ps -u <option>` kata lain ./admin <user>
+        if (execlp("ps", "ps", user_option, NULL) == -1) {
+            perror("execlp failed");
+            return 1;
+        }
+    }
+
+    if (strcmp(option, "-m") == 0 || strcmp(option, "-s") == 0 || strcmp(option, "-c") == 0 || strcmp(option, "-a") == 0) {
+        if (argc < 3 && strcmp(option, "-s") != 0) { // Tidak memerlukan argumen pengguna untuk opsi -s
+            printf("Error: Missing user argument for option %s\n", option);
+            show_help();
+            return 1;
+        }
+
+        char *user = argc >= 3 ? argv[2] : "";
+
+         if (strcmp(option, "-m") == 0) {
+            // Memantau proses pengguna yang diberikan
+            log_file = fopen("file.log", "a");
+            if (!log_file) {
+                perror("Error opening log file");
+                return 1;
+            }
+            monitor_processes(user);
+            fclose(log_file);
+        } else if (strcmp(option, "-s") == 0) {
+            // Menghentikan pemantauan dengan mengirim sinyal SIGKILL ke program admin
+            if (log_file != NULL) {
+                fclose(log_file);
+            }
+            return 0; // Keluar dari program
+        } else if (strcmp(option, "-c") == 0) {
+            // Menggagalkan proses untuk pengguna yang diberikan
+            fail_processes(user);
+        } else if (strcmp(option, "-a") == 0) {
+            // Mengizinkan proses untuk pengguna yang diberikan
+            allow_processes(user);
+        }
+    } else {
+        printf("Error: Invalid option %s\n", option);
+        show_help();
+        return 1;
+    }
+
+    return 0;
+}
+```
+
+maksud secara pemanggilan dalam fungsi main tersebut yakni :
+
+- if (argc < 2) { show_help(); return 1; }: Jika jumlah argumen kurang dari 2, tampilkan bantuan dan keluar dengan kode kesalahan.
+  char \*option = argv[1];: Menyimpan opsi dari argumen baris perintah.
+- if (argc == 2) { ... }: Jika jumlah argumen adalah 2, lakukan operasi khusus sesuai dengan opsi -u.
+  char user_option[20]; sprintf(user_option, "-u%s", argv[1]);: Buat opsi pengguna untuk perintah ps.
+- if (execlp("ps", "ps", user_option, NULL) == -1) { perror("execlp failed"); return 1; }: Jalankan perintah ps -u <user> menggunakan execlp, jika gagal, tampilkan pesan kesalahan.
+- if (strcmp(option, "-m") == 0 || strcmp(option, "-s") == 0 || strcmp(option, "-c") == 0 || strcmp(option, "-a") == 0) { ... }: Periksa apakah opsi valid.
+- if (argc < 3 && strcmp(option, "-s") != 0) { ... }: Periksa apakah argumen pengguna diperlukan untuk opsi tertentu.
+  char \*user = argc >= 3 ? argv[2] : "";: Simpan nama pengguna dari argumen baris perintah.
+- if (strcmp(option, "-m") == 0) { ... } else if (strcmp(option, "-s") == 0) { ... } else if (strcmp(option, "-c") == 0) { ... } else if (strcmp(option, "-a") == 0) { ... }: Lakukan operasi yang sesuai sesuai dengan opsi yang diberikan.
+- printf("Error: Invalid option %s\n", option); show_help(); return 1;: Tampilkan pesan kesalahan jika opsi tidak valid dan keluar dengan kode kesalahan.
+
+## contoh error saat menjalankan program
 
 - ![alt text](images/image-3.png)
   error saat memasukkan option dikarenakan <'option'> belum terbaca dengan baik oleh fungsi dan belum ditampilkan oleh fungsi main
 
-## revisi
+## Revisi
 
 sebelumnya terdapat beberapa kesalahan saat akan melaksanakan eksekusi ./admin <'option'> <'user'> sehingga dilakukan perbaikan pada proses pemonitoran :
 
@@ -220,6 +385,8 @@ kemudian pada soal selanjutnya yakni :
 - memasukkkan command `./admin -a mwlanaz` untuk memberhentikan monitoring GAGAL
 
 ![alt text](images/image-4.png)
+
+dari gambar tersebut dapat dilihat jika di log dalam point c maka akan terlihat program menampilkan output GAGAL
 
 ## Soal 4
 
