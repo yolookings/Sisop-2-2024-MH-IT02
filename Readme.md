@@ -14,7 +14,183 @@
 - [Soal 4](#soal-4)
 
 # Soal 1
+## Deskripsi Soal
+Membuat program yang membantu Gavriel memantau perubahan file.
 
+## Pengerjaan
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <dirent.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <time.h>
+#include <string.h>
+#include <unistd.h>
+#include <errno.h>
+#include <syslog.h>
+```
+
+Semua pustaka ini digunakan untuk mengelola file, direktori, dan sistem operasi dalam kode ini. 
+- stdio.h: Menyediakan fungsi dan konstanta untuk input/output.
+- stdlib.h: Menyediakan fungsi untuk pengelolaan memori, pengelolaan proses, dan pengelolaan string.
+- dirent.h: Menyediakan fungsi untuk mengakses direktori.
+- sys/types.h: Menyediakan tipe data yang diperlukan untuk sistem operasi.
+- sys/stat.h: Menyediakan fungsi untuk mengakses informasi file dan direktori.
+- fcntl.h: Menyediakan fungsi untuk mengontrol file descriptor.
+- time.h: Menyediakan fungsi untuk mengelola waktu dan tanggal.
+- string.h: Menyediakan fungsi untuk mengelola string.
+- unistd.h: Menyediakan fungsi untuk mengakses sistem operasi.
+- errno.h: Menyediakan kode error untuk sistem operasi.
+- syslog.h: Menyediakan fungsi untuk mengirim log ke sistem operasi.
+
+```c
+void makeLog(const char *diredit, char *filename) {
+    FILE *log = fopen("/home/vboxuser/Documents/kuman/virus.log", "a");
+    time_t rawtime;
+    struct tm *timeinfo;
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+    char time[100];
+    strftime(time, sizeof(time), "[%d-%m-%Y][%H:%M:%S]", timeinfo);
+    fprintf(log, "%s String aneh di %s berhasil diganti!\n", time, filename);
+    fclose(log);
+}
+```
+
+Fungsi ini digunakan untuk mencatat setiap penggantian string ke dalam file virus.log, lalu membuka file log dalam mode append ("a"). Setelah itu fungsi ini bekerja untuk mendapatkan waktu saat ini dan mengubahnya menjadi format [dd-mm-YYYY][HH:MM:SS] serta menulis waktu dan informasi penggantian ke dalam file log untuk kemudian menutup file log.
+
+```c
+char *editContent(char *str, char *before, char *after) {
+    char *pos, *temp;
+    int index, before_len;
+    int i, count = 0;
+
+    before_len = strlen(before);
+
+    for (i = 0; str[i] != '\0'; i++) {
+        if (strstr(&str[i], before) == &str[i]) {
+            count++;
+            i += before_len - 1;
+        }
+    }
+
+    temp = (char *)malloc(i + count * (strlen(after) - before_len) + 1);
+
+    i = 0;
+    while (*str) {
+        if ((pos = strstr(str, before)) == str) {
+            strcpy(&temp[i], after);
+            i += strlen(after);
+            str += before_len;
+        } else {
+            temp[i++] = *str++;
+        }
+    }
+
+    temp[i] = '\0';
+    return temp;
+}
+```
+Fungsi ini mengambil string asli, string yang akan diganti (before), dan string pengganti (after) kemudian menghitung jumlah kemunculan before dalam str. Lalu fungsi ini akan membuat buffer baru dengan ukuran yang cukup untuk menampung string hasil penggantian. Fungsi ini juga akan mengganti semua kemunculan before dengan after dalam str dan mengembalikan string hasil penggantian.
+
+```c
+void editFile(const char *diredit) {
+    struct dirent *entry;
+    struct stat stat;
+    char file_path[1024];
+    char buffer[1024];
+    char *kontenTelahDiUbah;
+
+    DIR *dir = opendir(diredit);
+    if (!dir) return;
+
+    chdir(diredit);
+    while((entry = readdir(dir))){
+        if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) continue;
+
+        if(lstat(entry->d_name, &stat) == -1) continue;
+
+        if(S_ISDIR(stat.st_mode)){
+            editFile(entry->d_name);
+        }else if(S_ISREG(stat.st_mode)){
+            sprintf(file_path, "%s/%s", diredit, entry->d_name);
+
+            FILE *awal = fopen(file_path, "r");
+            if (awal != NULL){
+                fread(buffer, 1, sizeof(buffer), awal);
+                fclose(awal);
+
+                kontenTelahDiUbah = buffer;
+                kontenTelahDiUbah = editContent(kontenTelahDiUbah, "m4LwAr3", "[MALWARE]");
+                kontenTelahDiUbah = editContent(kontenTelahDiUbah, "5pYw4R3", "[SPYWARE]");
+                kontenTelahDiUbah = editContent(kontenTelahDiUbah, "R4nS0mWaR3", "[RANSOMWARE]");
+            
+              if (strcmp(buffer, kontenTelahDiUbah) != 0) {
+                    awal = fopen(file_path, "w");
+                    fputs(kontenTelahDiUbah, awal);
+                    fclose(awal);
+                    makeLog(diredit, entry->d_name);
+                    sleep(15);
+              }
+            }
+        }
+    }
+  closedir(dir);
+}
+```
+Fungsi ini akan berjalan secara rekursif untuk mencari semua file dalam direktori yang ditentukan dan mengedit konten file tersebut, lalu membuka direktori dengan opendir. Kemudian fungsi akan membaca setiap entri direktori dengan readdir. Jika entri adalah direktori, fungsi memanggil editFile secara rekursif. Jika entri adalah file, maka fungsi akan membaca konten file, mengedit konten dengan editContent, dan menulis kembali ke file jika ada perubahan. Setelah selesai, fungsi akan menutup direktori dengan closedir.
+
+```c
+int main(int argc, char *argv[]){
+
+  pid_t pid, sid;
+
+  pid = fork();
+
+  if (pid < 0)
+  {
+  exit(EXIT_FAILURE);
+  }
+
+  if (pid > 0)
+  {
+  exit(EXIT_SUCCESS);
+  }
+
+  umask(0);
+
+  sid = setsid();
+  if (sid < 0)
+  {
+  exit(EXIT_FAILURE);
+  }
+
+  if (chdir("/") < 0)
+  {
+  exit(EXIT_FAILURE);
+  }
+
+  close(STDIN_FILENO); 
+  close(STDOUT_FILENO);
+  close(STDERR_FILENO);
+
+  while (1){
+  sleep(15);
+  editFile(argv[1]);
+  }
+
+return 0;
+}
+```
+Program ini dimulai dengan menjadi daemon untuk berjalan di latar belakang dengan menggunakan fork dan setsid untuk menjadi daemon. Selanjutnya program akan engubah direktori kerja ke root (/) dan menutup file descriptor standar. Dalam loop tak terbatas, program menunggu 15 detik, kemudian memanggil editfile untuk mengedit file dalam direktori yang ditentukan oleh argumen baris perintah.
+Penggunaan Program:
+Program ini dijalankan dari terminal dengan memberikan path direktori sebagai argumen.
+Program akan mencari dan mengganti string tertentu dalam semua file di dalam direktori dan subdirektorinya, serta mencatat setiap penggantian ke dalam file virus.log.
+
+## Kesulitan
+Kebingungan pada awal percobaan pada virus.log masih ada karakter aneh yang terselip
 # Soal 2
 
 # Soal 3
