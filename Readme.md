@@ -257,35 +257,61 @@ Options:
 
 ```c
 void monitorProcesses(const char *user) {
-    char command[MAX_LINE_LENGTH];
-    FILE *ps_output;
-    char line[MAX_LINE_LENGTH];
-    char log_filename[MAX_LINE_LENGTH];
-    FILE *log_file;
-    int pid_process;
-
-    snprintf(command, sizeof(command), "ps -u %s -o pid,comm | awk 'NR>1 {print $1, $2}'", user);
-    ps_output = popen(command, "r");
-    if (ps_output == NULL) {
-        perror("Failed to open pipe");
+    struct passwd *pwd = getpwnam(user);
+    if (pwd == NULL) {
+        perror("Failed to get user information");
         exit(EXIT_FAILURE);
     }
+    uid_t uid = pwd->pw_uid;
 
+    char log_filename[MAX_LINE_LENGTH];
     snprintf(log_filename, sizeof(log_filename), "%s.log", user);
-    log_file = fopen(log_filename, "a");
+    FILE *log_file = fopen(log_filename, "a");
     if (log_file == NULL) {
         perror("Failed to open log file");
         exit(EXIT_FAILURE);
     }
 
-    pclose(ps_output);
+    DIR *dir = opendir("/proc");
+    if (dir == NULL) {
+        perror("Failed to open /proc directory");
+        exit(EXIT_FAILURE);
+    }
+
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        char filename[MAX_LINE_LENGTH];
+        snprintf(filename, sizeof(filename), "/proc/%s/status", entry->d_name);
+        FILE *status_file = fopen(filename, "r");
+        if (status_file != NULL) {
+            char line[MAX_LINE_LENGTH];
+            uid_t uid_process = 0;
+            while (fgets(line, sizeof(line), status_file)) {
+                if (strncmp(line, "Uid:", 4) == 0) {
+                    sscanf(line + 4, "%u", &uid_process);
+                    break;
+                }
+            }
+            fclose(status_file);
+            if (uid_process == uid) {
+                fprintf(log_file, "%s\n", entry->d_name);
+            }
+        }
+    }
+
+    closedir(dir);
     fclose(log_file);
 }
 ```
 
 Perintah ps digunakan untuk mendapatkan daftar proses untuk pengguna tertentu.
 Setiap baris output dari ps diproses untuk mendapatkan PID proses dan nama prosesnya.
-Waktu saat ini diambil menggunakan time() dan diubah formatnya menggunakan localtime() dan strftime() untuk mendapatkan timestamp.
+
+Pendekatan yang diambil adalah dengan menggunakan direktori `/proc` untuk mengakses informasi status dari setiap proses yang sedang berjalan.
+
+Setelah memperoleh informasi status, kode akan memeriksa ID pengguna dari setiap proses dan mencocokkannya dengan ID pengguna yang ditentukan.
+
+Proses-proses yang sesuai akan dicatat dalam sebuah file log yang bernama user.log, di mana user adalah nama pengguna yang sedang dimonitoring
 
 ## run as daemon
 
@@ -509,7 +535,7 @@ sebelumnya terdapat beberapa kesalahan saat akan melaksanakan eksekusi ./admin <
 ```c
     while (fgets(line, sizeof(line), ps_output) != NULL) {
         if (sscanf(line, "%d", &pid_process) != 1) {
-            fprintf(stderr, "gagal menjalankan: %s", line);
+            fprintf(stderr, "sukses menjalankan: %s", line);
             continue;
         }
 
