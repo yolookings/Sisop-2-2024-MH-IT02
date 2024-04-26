@@ -215,7 +215,7 @@ void decrypt_string(char *str)
 - Setiap karakter huruf kecil ('a' sampai 'z') dan huruf besar ('A' sampai 'Z') akan diubah sesuai dengan algoritma ROT19.
 - Hasil dari operasi tersebut akan disimpan kembali pada posisi karakter yang sama dalam string `str`.
 
-```
+```c
 void delete_file(char *file) 
 {
     if (remove(file) == 0) 
@@ -231,7 +231,7 @@ void delete_file(char *file)
 - Jika penghapusan berhasil (`remove()` mengembalikan nilai 0), maka pesan berhasil dicetak.
 - Jika terjadi kesalahan, pesan error dicetak.
 
-```
+```c
 void log_file_action(char *username, char *file, char *action) 
 {
     FILE *logFile = fopen("history.log", "a");
@@ -256,7 +256,7 @@ void log_file_action(char *username, char *file, char *action)
 - Tindakan (action) beserta informasi pengguna (username), nama file, dan timestamp dicatat ke dalam file log.
 - File log ditutup setelah selesai mencatat.
 
-```
+```c
 void process_directory_files() 
 {
     DIR *dir;
@@ -372,7 +372,7 @@ void restore_backup_files()
 - `perform_backup()`: Memindahkan file dengan pola nama tertentu ke folder 'backup' dan mencatat tindakan tersebut ke dalam log.
 - `restore_backup_files()`: Mengembalikan file dari folder 'backup' ke direktori asalnya dalam 'library' dan mencatat tindakan tersebut ke dalam log.
 
-```
+```c
 void handle_signals(int signum) 
 {
     char *mode;
@@ -395,7 +395,7 @@ void handle_signals(int signum)
 - Bergantung pada sinyal yang diterima (SIGRTMIN, SIGUSR1, SIGUSR2), fungsi ini memanggil fungsi perform_backup() atau restore_backup_files() sesuai dengan mode yang dipilih.
 - Setelah menangani sinyal, fungsi mencatat tindakan ke dalam log.
 
-```
+```c
 int main() 
 {
     // Proses pertama: Download file library.zip dari URL yang ditentukan menggunakan wget
@@ -462,12 +462,12 @@ int main()
     - Jika child process berhasil (`WIFEXITED(status)` dan `WEXITSTATUS(status) == 0`), pesan "Download berhasil" dicetak.
     - Jika child process gagal, pesan "Download gagal" dicetak.
 
-```
+```c
 process_directory_files();
 ```
 Fungsi `process_directory_files()` dipanggil untuk melakukan pemrosesan terhadap file-file yang ada dalam direktori 'library'. Dalam fungsi ini, setiap file akan dicek untuk melakukan dekripsi nama file dan aksi berdasarkan kodenya (seperti rename atau hapus), sesuai dengan aturan yang telah dijelaskan sebelumnya.
 
-```
+```c
 signal(SIGRTMIN, handle_signals); 
 signal(SIGUSR1, handle_signals); 
 signal(SIGUSR2, handle_signals); 
