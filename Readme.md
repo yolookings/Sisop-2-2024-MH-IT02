@@ -196,7 +196,7 @@ Kebingungan pada awal percobaan pada virus.log masih ada karakter aneh yang ters
 Paul diminta membuat program manajemen file sederhana dalam bahasa C untuk sistem Linux. Program yang dibuat harus berjalan sebagai daemon dan memiliki beberapa fungsi.
 
 ## Pengerjaan
-``` 
+``` c
 void decrypt_string(char *str) 
 {
     int i = 0;
