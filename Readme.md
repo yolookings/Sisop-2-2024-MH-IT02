@@ -476,6 +476,8 @@ signal(SIGUSR2, handle_signals);
 ```
 Kode di atas menetapkan penanganan sinyal untuk tindakan backup dan restore dengan menggunakan fungsi `handle_signals()`. Ketika program menerima sinyal `SIGRTMIN` (dari `kill -SIGRTMIN <pid_program>`), `SIGUSR1` (dari `kill -SIGUSR1 <pid_program>`), atau SIGUSR2 (dari `kill -SIGUSR2 <pid_program>`), maka fungsi `handle_signals()` akan dipanggil sesuai dengan sinyal yang diterima.
 
+## Revisi
+
 # Soal 3
 
 ## Deskripsi Soal
