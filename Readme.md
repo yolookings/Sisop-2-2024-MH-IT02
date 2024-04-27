@@ -14,10 +14,13 @@
 - [Soal 4](#soal-4)
 
 # Soal 1
+
 ## Deskripsi Soal
+
 Membuat program yang membantu Gavriel memantau perubahan file.
 
 ## Pengerjaan
+
 ```c
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,7 +35,8 @@ Membuat program yang membantu Gavriel memantau perubahan file.
 #include <syslog.h>
 ```
 
-Semua pustaka ini digunakan untuk mengelola file, direktori, dan sistem operasi dalam kode ini. 
+Semua pustaka ini digunakan untuk mengelola file, direktori, dan sistem operasi dalam kode ini.
+
 - stdio.h: Menyediakan fungsi dan konstanta untuk input/output.
 - stdlib.h: Menyediakan fungsi untuk pengelolaan memori, pengelolaan proses, dan pengelolaan string.
 - dirent.h: Menyediakan fungsi untuk mengakses direktori.
@@ -93,6 +97,7 @@ char *editContent(char *str, char *before, char *after) {
     return temp;
 }
 ```
+
 Fungsi ini mengambil string asli, string yang akan diganti (before), dan string pengganti (after) kemudian menghitung jumlah kemunculan before dalam str. Lalu fungsi ini akan membuat buffer baru dengan ukuran yang cukup untuk menampung string hasil penggantian. Fungsi ini juga akan mengganti semua kemunculan before dengan after dalam str dan mengembalikan string hasil penggantian.
 
 ```c
@@ -126,7 +131,7 @@ void editFile(const char *diredit) {
                 kontenTelahDiUbah = editContent(kontenTelahDiUbah, "m4LwAr3", "[MALWARE]");
                 kontenTelahDiUbah = editContent(kontenTelahDiUbah, "5pYw4R3", "[SPYWARE]");
                 kontenTelahDiUbah = editContent(kontenTelahDiUbah, "R4nS0mWaR3", "[RANSOMWARE]");
-            
+
               if (strcmp(buffer, kontenTelahDiUbah) != 0) {
                     awal = fopen(file_path, "w");
                     fputs(kontenTelahDiUbah, awal);
@@ -140,6 +145,7 @@ void editFile(const char *diredit) {
   closedir(dir);
 }
 ```
+
 Fungsi ini akan berjalan secara rekursif untuk mencari semua file dalam direktori yang ditentukan dan mengedit konten file tersebut, lalu membuka direktori dengan opendir. Kemudian fungsi akan membaca setiap entri direktori dengan readdir. Jika entri adalah direktori, fungsi memanggil editFile secara rekursif. Jika entri adalah file, maka fungsi akan membaca konten file, mengedit konten dengan editContent, dan menulis kembali ke file jika ada perubahan. Setelah selesai, fungsi akan menutup direktori dengan closedir.
 
 ```c
@@ -172,7 +178,7 @@ int main(int argc, char *argv[]){
   exit(EXIT_FAILURE);
   }
 
-  close(STDIN_FILENO); 
+  close(STDIN_FILENO);
   close(STDOUT_FILENO);
   close(STDERR_FILENO);
 
@@ -184,12 +190,14 @@ int main(int argc, char *argv[]){
 return 0;
 }
 ```
+
 Program ini dimulai dengan menjadi daemon untuk berjalan di latar belakang dengan menggunakan fork dan setsid untuk menjadi daemon. Selanjutnya program akan engubah direktori kerja ke root (/) dan menutup file descriptor standar. Dalam loop tak terbatas, program menunggu 15 detik, kemudian memanggil editfile untuk mengedit file dalam direktori yang ditentukan oleh argumen baris perintah.
 Penggunaan Program:
 Program ini dijalankan dari terminal dengan memberikan path direktori sebagai argumen.
 Program akan mencari dan mengganti string tertentu dalam semua file di dalam direktori dan subdirektorinya, serta mencatat setiap penggantian ke dalam file virus.log.
 
 ## Kesulitan
+
 Kebingungan pada awal percobaan pada virus.log masih ada karakter aneh yang terselip
 
 # Soal 2
@@ -898,3 +906,233 @@ pid_t app_pids[MAX_APPS];
 char app_names[MAX_APPS][MAX_NAME_LENGTH]; // Menyimpan nama aplikasi yang dijalankan
 int num_apps_running = 0;
 ```
+
+#include <stdio.h>: Mendefinisikan standar input-output, memungkinkan program untuk melakukan operasi masukan dan keluaran.
+
+#include <stdlib.h>: Memberikan akses ke fungsi-fungsi standar untuk alokasi memori, konversi tipe data, dan fungsi-fungsi utilitas lainnya.
+
+#include <string.h>: Memungkinkan manipulasi string, seperti menggabungkan, menyalin, dan membandingkan string.
+
+#include <unistd.h>: Menyediakan akses ke fungsi-fungsi sistem POSIX, termasuk fungsi-fungsi yang berhubungan dengan proses, direktori, dan pengaturan lingkungan.
+
+#include <signal.h>: Memungkinkan penanganan sinyal, seperti SIGKILL, SIGTERM, dan lainnya.
+
+#`define MAX_APPS 10`: Mendefinisikan konstanta MAX_APPS dengan nilai 10, yang merupakan jumlah maksimum aplikasi yang dapat dijalankan dalam program.
+
+#`define MAX_NAME_LENGTH 20`: Mendefinisikan konstanta MAX_NAME_LENGTH dengan nilai 20, yang merupakan panjang maksimum nama aplikasi yang dapat disimpan dalam array.
+
+## Membuka Aplikasi Berdasarkan Argumen
+
+```c
+void open_apps_from_args(int argc, char *argv[]) {
+    // Mulai dari argumen kedua, karena argumen pertama adalah nama program itu sendiri
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-o") == 0) {
+            // Jika argumen adalah "-o", kita membaca nama aplikasi dan jumlah jendela yang diinginkan
+            char *app_name = argv[++i];
+            int num_windows = atoi(argv[++i]);
+
+            // Implementasi membuka aplikasi sesuai dengan argumen di sini
+            // Misalnya, Anda dapat menggunakan fork() dan exec() untuk menjalankan aplikasi
+            // di bawah ini hanyalah contoh sederhana
+            for (int j = 0; j < num_windows; j++) {
+                pid_t pid = fork();
+                if (pid == 0) {
+                    execlp(app_name, app_name, NULL);
+                    // Jika execlp() gagal, cetak pesan kesalahan
+                    perror("exec");
+                    _exit(1);
+                } else if (pid < 0) {
+                    // Jika fork() gagal, cetak pesan kesalahan
+                    perror("fork");
+                } else {
+                    // Simpan PID dan nama aplikasi dari proses yang dijalankan
+                    app_pids[num_apps_running] = pid;
+                    strcpy(app_names[num_apps_running], app_name);
+                    num_apps_running++;
+                }
+            }
+        }
+    }
+}
+```
+
+Fungsi ini membuka aplikasi berdasarkan argumen yang diberikan saat menjalankan program. Jika argumen adalah "-o", program akan membaca nama aplikasi dan jumlah jendela yang diinginkan, lalu menjalankan aplikasi tersebut dalam loop.
+
+Fungsi `open_apps_from_args` digunakan untuk membuka aplikasi berdasarkan argumen yang diberikan dari baris perintah. Dalam iterasi melalui argumen, jika ditemukan argumen `"-o"`, fungsi akan membaca nama aplikasi dan jumlah jendela yang diinginkan.
+
+Selanjutnya, fungsi akan menggunakan `fork()` untuk membuat proses baru dan `execlp()` untuk menjalankan aplikasi tersebut. Setiap proses anak yang berhasil dijalankan akan menyimpan PID dan nama aplikasi untuk referensi selanjutnya, sementara pesan kesalahan akan dicetak jika terjadi masalah dalam pembuatan proses anak atau eksekusi aplikasi.
+
+## Membuka Aplikasi Berdasarkan Konfigurasi
+
+```c
+void open_apps_from_config(const char *filename) {
+    FILE *file = fopen(filename, "r");
+    if (file == NULL) {
+        perror("Error opening file");
+        return;
+    }
+
+    char app_name[MAX_NAME_LENGTH];
+    int num_windows;
+
+    while (fscanf(file, "%s %d", app_name, &num_windows) == 2) {
+        // Implementasi membuka aplikasi sesuai dengan konfigurasi di sini
+        // Misalnya, Anda dapat menggunakan fork() dan exec() untuk menjalankan aplikasi
+        // di bawah ini hanyalah contoh sederhana
+        for (int j = 0; j < num_windows; j++) {
+            pid_t pid = fork();
+            if (pid == 0) {
+                execlp(app_name, app_name, NULL);
+                // Jika execlp() gagal, cetak pesan kesalahan
+                perror("exec");
+                _exit(1);
+            } else if (pid < 0) {
+                // Jika fork() gagal, cetak pesan kesalahan
+                perror("fork");
+            } else {
+                // Simpan PID dan nama aplikasi dari proses yang dijalankan
+                app_pids[num_apps_running] = pid;
+                strcpy(app_names[num_apps_running], app_name);
+                num_apps_running++;
+            }
+        }
+    }
+
+    fclose(file);
+}
+```
+
+Fungsi ini membuka aplikasi berdasarkan konfigurasi yang tersimpan dalam sebuah file. Program membaca nama aplikasi dan jumlah jendela dari file konfigurasi, lalu menjalankan aplikasi tersebut dalam loop.
+
+## Menghentikan Aplikasi
+
+```c
+void kill_all_apps() {
+    for (int i = 0; i < num_apps_running; i++) {
+        kill(app_pids[i], SIGKILL);
+    }
+    num_apps_running = 0;
+}
+```
+
+Fungsi ini menghentikan semua aplikasi yang sedang berjalan dengan mengirimkan sinyal SIGKILL ke setiap proses.
+
+## Menghentikan Aplikasi Berdasarkan Konfigurasi
+
+```c
+void kill_apps_from_config(const char *filename) {
+    FILE *file = fopen(filename, "r");
+    if (file == NULL) {
+        perror("Error opening file");
+        return;
+    }
+
+    char app_name[MAX_NAME_LENGTH];
+    int num_windows;
+
+    while (fscanf(file, "%s %d", app_name, &num_windows) == 2) {
+        // Cari PID dari proses yang sesuai dengan konfigurasi dan kirim sinyal SIGKILL
+        for (int i = 0; i < num_apps_running; i++) {
+            // Bandingkan nama aplikasi dengan nama aplikasi yang dijalankan
+            // dan kirim sinyal SIGKILL jika cocok
+            if (strcmp(app_name, app_names[i]) == 0) {
+                kill(app_pids[i], SIGKILL);
+                break;
+            }
+        }
+    }
+
+    fclose(file);
+}
+```
+
+Fungsi ini menghentikan aplikasi berdasarkan konfigurasi yang tersimpan dalam sebuah file. Program mencocokkan nama aplikasi yang dijalankan dengan nama aplikasi dalam file konfigurasi, lalu mengirimkan sinyal SIGKILL ke proses yang sesuai.
+
+## Fungsi Main
+
+```c
+int main(int argc, char *argv[]) {
+    if (argc < 2) {
+        printf("Usage: %s -o <app1> <num1> -o <app2> <num2> ... \n", argv[0]);
+        printf("       %s -f <filename>\n", argv[0]);
+        printf("       %s -k\n", argv[0]);
+        printf("       %s -k <filename>\n", argv[0]);
+        return 1;
+    }
+
+    if (strcmp(argv[1], "-o") == 0) {
+        open_apps_from_args(argc, argv);
+    } else if (strcmp(argv[1], "-f") == 0) {
+        const char *filename = argv[2];
+        open_apps_from_config(filename);
+    } else if (strcmp(argv[1], "-k") == 0) {
+        if (argc == 2) {
+            kill_all_apps();
+        } else {
+            const char *filename = argv[2];
+            kill_apps_from_config(filename);
+        }
+    } else {
+        printf("Invalid command.\n");
+        return 1;
+    }
+
+    return 0;
+}
+```
+
+Fungsi utama program. Program membaca argumen dari baris perintah dan menjalankan fungsi yang sesuai berdasarkan argumen yang diberikan.
+
+## kasus error
+
+![alt text](images/image6.png)
+
+kasus error dimana beberapa aplikasi tidak dapat terbuka dan terjadi error
+
+## Revisi
+
+```c
+void open_apps_from_args(int argc, char *argv[]) {
+    // Mulai dari argumen kedua, karena argumen pertama adalah nama program itu sendiri
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-o") == 0 && i + 2 < argc) {
+            // Jika argumen adalah "-o" dan terdapat cukup argumen untuk nama aplikasi dan jumlah jendela
+            char *app_name = argv[++i];
+            int num_windows = atoi(argv[++i]);
+
+            // Validasi nama aplikasi
+            if (access(app_name, F_OK) != -1) {
+                // Implementasi membuka aplikasi sesuai dengan argumen di sini
+                // Misalnya, Anda dapat menggunakan fork() dan exec() untuk menjalankan aplikasi
+                // di bawah ini hanyalah contoh sederhana
+                for (int j = 0; j < num_windows; j++) {
+                    pid_t pid = fork();
+                    if (pid == 0) {
+                        execlp(app_name, app_name, NULL);
+                        // Jika execlp() gagal, cetak pesan kesalahan
+                        perror("exec");
+                        _exit(1);
+                    } else if (pid < 0) {
+                        // Jika fork() gagal, cetak pesan kesalahan
+                        perror("fork");
+                    } else {
+                        // Simpan PID dan nama aplikasi dari proses yang dijalankan
+                        app_pids[num_apps_running] = pid;
+                        strcpy(app_names[num_apps_running], app_name);
+                        num_apps_running++;
+                    }
+                }
+            } else {
+                fprintf(stderr, "Error: Aplikasi '%s' tidak ditemukan.\n", app_name);
+            }
+        } else {
+            fprintf(stderr, "Usage: %s -o <app1> <num1> -o <app2> <num2> ...\n", argv[0]);
+            return;
+        }
+    }
+}
+
+```
+
+Dalam revisi di atas, saya menambahkan validasi untuk memeriksa apakah aplikasi yang akan dijalankan ada atau tidak sebelum mencoba menjalankannya. Juga, pesan kesalahan yang lebih spesifik akan dicetak jika aplikasi tidak ditemukan. Selain itu, jika format argumen tidak sesuai, pesan kesalahan yang sesuai akan dicetak untuk memberi tahu pengguna tentang penggunaan yang benar.
