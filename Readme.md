@@ -485,6 +485,8 @@ signal(SIGUSR2, handle_signals);
 Kode di atas menetapkan penanganan sinyal untuk tindakan backup dan restore dengan menggunakan fungsi `handle_signals()`. Ketika program menerima sinyal `SIGRTMIN` (dari `kill -SIGRTMIN <pid_program>`), `SIGUSR1` (dari `kill -SIGUSR1 <pid_program>`), atau SIGUSR2 (dari `kill -SIGUSR2 <pid_program>`), maka fungsi `handle_signals()` akan dipanggil sesuai dengan sinyal yang diterima.
 
 ## Revisi
+Pada saat demo, kode yang saya tuliskan tidak dapat mengganti nama file seperti yang diminta oleh soal, sehingga saya harus memperbaiki kode tersebut agar dapat menyelesaikan soal yang diberikan. Namun hingga saat ini, saya tidak dapat memperbaiki kode tersebut menjadi seperti yang diminta oleh soal
+![alt text](<Eror sisop2-1.jpg>)
 
 # Soal 3
 
