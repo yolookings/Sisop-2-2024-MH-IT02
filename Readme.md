@@ -486,7 +486,8 @@ Kode di atas menetapkan penanganan sinyal untuk tindakan backup dan restore deng
 
 ## Revisi
 Pada saat demo, kode yang saya tuliskan tidak dapat mengganti nama file seperti yang diminta oleh soal, sehingga saya harus memperbaiki kode tersebut agar dapat menyelesaikan soal yang diberikan. Namun hingga saat ini, saya tidak dapat memperbaiki kode tersebut menjadi seperti yang diminta oleh soal
-![alt text](<Eror sisop2-1.jpg>)
+![Eror sisop2](https://github.com/yolookings/Sisop-2-2024-MH-IT02/assets/151950309/d4ecd23a-c0e8-44d6-919b-85c551bb3277)
+
 
 # Soal 3
 
